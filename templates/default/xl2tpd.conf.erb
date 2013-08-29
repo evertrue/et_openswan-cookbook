@@ -1,0 +1,17 @@
+[global]
+; ipsec saref = yes
+listen-addr = <%= node['cloud'] ? node['cloud']['local_ipv4'] : node['ipaddress'] %>
+; port = 1701
+
+[lns default]
+ip range = 10.10.10.2-10.10.10.254
+local ip = 10.10.10.1
+assign ip = yes ; Added by eherot
+refuse chap = yes
+require pap = yes
+require authentication = yes ; Changed to yes by eherot
+name = LinuxVPNserver
+; hostname = <%= node.name %> ; Commented by eherot
+ppp debug = yes
+length bit = yes
+pppoptfile = /etc/xl2tpd/ppp-options.xl2tpd

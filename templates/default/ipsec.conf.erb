@@ -1,0 +1,79 @@
+# /etc/ipsec.conf - Openswan IPsec configuration file
+# DO NOT EDIT BY HAND.  This file is maintained by Chef.
+
+# This file:  /usr/share/doc/openswan/ipsec.conf-sample
+#
+# Manual:     ipsec.conf.5
+
+
+version 2.0 # conforms to second version of ipsec.conf specification
+
+# basic configuration
+config setup
+  # Do not set debug options to debug configuration issues!
+  # plutodebug / klipsdebug = "all", "none" or a combation from below:
+  # "raw crypt parsing emitting control klips pfkey natt x509 dpd private"
+  # eg:
+  # plutodebug="control parsing"
+  # Again: only enable plutodebug or klipsdebug when asked by a developer
+  #
+  # enable to get logs per-peer
+  # plutoopts="--perpeerlog"
+  #
+  # Enable core dumps (might require system changes, like ulimit -C)
+  # This is required for abrtd to work properly
+  # Note: incorrect SElinux policies might prevent pluto writing the core
+  dumpdir=/var/run/pluto/
+  #
+  # NAT-TRAVERSAL support, see README.NAT-Traversal
+  nat_traversal=yes
+  # exclude networks used on server side by adding %v4:!a.b.c.0/24
+  # It seems that T-Mobile in the US and Rogers/Fido in Canada are
+  # using 25/8 as "private" address space on their 3G network.
+  # This range has not been announced via BGP (at least upto 2010-12-21)
+  virtual_private=%v4:10.0.0.0/16
+  # OE is now off by default. Uncomment and change to on, to enable.
+  oe=off
+  # which IPsec stack to use. auto will try netkey, then klips then mast
+  protostack=auto
+  # Use this to log to a file, or disable logging on embedded systems (like openwrt)
+  #plutostderrlog=/dev/null
+
+
+# Add connections here
+conn L2TP-PSK-CLIENTS
+  #
+  # Configuration for one user with any type of IPsec/L2TP client
+  # including the updated Windows 2000/XP (MS KB Q818043), but
+  # excluding the non-updated Windows 2000/XP.
+  #
+  #
+  # Use a Preshared Key. Disable Perfect Forward Secrecy.
+  #
+  # PreSharedSecret needs to be specified in /etc/ipsec.secrets as
+  # YourIPAddress  %any: "sharedsecret"
+  authby=secret
+  pfs=no
+  auto=add
+  keyingtries=3
+  # we cannot rekey for %any, let client rekey
+  rekey=no
+  type=transport
+  #
+  left=<%= node['cloud'] ? node['cloud']['local_ipv4'] : node['ipaddress'] %>
+  leftnexthop=<%= node['network']['default_gateway'] %>
+  # or you can use: left=YourIPAddress
+  # leftnexthop=YourGatewayIPAddress
+  #
+  # For updated Windows 2000/XP clients,
+  # to support old clients as well, use leftprotoport=17/%any
+  leftprotoport=17/1701
+  #
+  # The remote user.
+  #
+  right=%any
+  rightsubnet=vhost:%priv,%no
+  # Using the magic port of "0" means "any one single port". This is
+  # a work around required for Apple OSX clients that use a randomly
+  # high port, but propose "0" instead of their port.
+  rightprotoport=17/%any
